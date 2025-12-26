@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI ScrollGuard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      transition: 0.3s;
+    }
+
+    .light {
+      background: #f4f4f4;
+      color: black;
+    }
+
+    .banner {
+      background: linear-gradient(to right, #2563eb, #1e40af);
+      padding: 20px;
+      text-align: center;
+      font-size: 26px;
+      font-weight: bold;
+    }
+
+    .toggle {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      padding: 8px 12px;
+      cursor: pointer;
+      background: black;
+      color: white;
+      border-radius: 8px;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      padding: 25px;
+    }
+
+    .card {
+      background: linear-gradient(145deg, #0f172a, #020617);
+      padding: 22px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+      transition: 0.3s;
+    }
+    
+    
+    .card:hover {
+      transform: translateY(-4px);
+    }
+
+    .metric {
+      font-size: 22px;
+      font-weight: bold;
+    }
+    .green { color: #22c55e; }
+    .red { color: #ef4444; }
+    .blue { color: #60a5fa; }
+
+
+    .light .card {
+      background: white;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .green { color: #22c55e; font-weight: bold; }
+    .red { color: #ef4444; font-weight: bold; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 6px;
+      border-bottom: 1px solid gray;
+      text-align: center;
+    }
+
+    #predictionNote {
+      font-size: 14px;
+      margin-top: 6px;
+      opacity: 0.85;
+    }
+
+    .tab-btn {
+      background: #1e40af;
+      color: white;
+      border-radius: 20px;
+      padding: 8px 18px;
+    }
+    
+    .tab-btn.active {
+      background: #22c55e;
+    }
+
+    table {
+      max-height: 260px;
+      overflow-y: auto;
+      display: block;
+    }
+ 
+
+  </style>
+</head>
+
+<body id="body">
+
+<div class="banner">
+  🎓 AI SCROLLGUARD – Smart Digital De-Addiction System
+</div>
+
+<div style="display:flex; gap:15px; padding:15px; justify-content:center;">
+  <button class="tab-btn active" onclick="showTab('dashboardTab', this)">🏠 Overview</button>
+  <button class="tab-btn" onclick="showTab('analyticsTab', this)">📊 Insights</button>
+  <button class="tab-btn" onclick="showTab('riskTab', this)">🤖 Risk Analysis</button>
+</div>
+
+
+<div class="toggle" onclick="toggleMode()">🌙 / ☀</div>
+
+<div id="dashboardTab" class="container">
+
+  <div class="card">
+    <h3>📌 Today’s Status</h3>
+    <h2 id="todayStatus">--</h2>
+  </div>
+
+
+  <!-- INPUT CARD -->
+  <div class="card">
+    <h3>📲 Daily Entry</h3>
+    <input type="number" id="usage" placeholder="Scroll Time (minutes)">
+    <input type="text" id="task" placeholder="Today's Important Task">
+    <button onclick="sendData()">Submit</button>
+    <p id="alert"></p>
+  </div>
+
+  <div class="card">
+    <h3>🧠 AI Wellness Score</h3>
+    <h1 id="wellnessScore">-- / 100</h1>
+    <p id="wellnessNote"></p>
+  </div>
+
+
+  <!-- DASHBOARD -->
+  <div class="card">
+    <h3>📊 Dashboard</h3>
+    <p>Total Time: <b><span id="total"></span> min</b></p>
+    <p>Average / Day: <b><span id="avg"></span> min</b></p>
+    <p>Green Days: <b><span id="green"></span></b></p>
+    <p>Red Days: <b><span id="red"></span></b></p>
+    <p>Best Streak: <b><span id="best"></span></b> ✅</p>
+  </div>
+
+  <!-- TASK REMINDER -->
+  <div class="card">
+    <h3>📝 Task Reminder</h3>
+    <p id="taskReminder">No task yet</p>
+  </div>
+
+  <!-- AI PREDICTION -->
+   
+  <div class="card">
+    <h3>🤖 AI Prediction</h3>
+    <p>Tomorrow's Predicted Usage:</p>
+    <h1 id="prediction" style="font-size:36px">-- min</h1>
+    <p id="predictionNote"></p>
+  </div>
+
+</div>
+
+<!-- ANALYTICS TAB -->
+<div id="analyticsTab" class="container" style="display:none;">
+
+  <!-- Day-wise Report -->
+  <div class="card">
+    <h3>📅 Day-wise Report</h3>
+    <table id="analyticsTable">
+      <tr><th>Date</th><th>Minutes</th><th>Status</th></tr>
+    </table>
+  </div>
+
+  <!-- Usage Trend -->
+  <div class="card">
+    <h3>📈 Usage Trend</h3>
+    <canvas id="analyticsChart" height="260"></canvas>
+  </div>
+
+</div>
+
+<!-- AI RISK TAB -->
+<div id="riskTab" class="container" style="display:none;">
+
+
+  <div class="card">
+    <h3>🤖 AI Addiction Risk Predictor</h3>
+    <button onclick="loadSampleAPIData()">
+      Load Sample Data (Simulated API)
+    </button>
+
+    <input id="instagram" placeholder="Instagram minutes">
+    <input id="youtube" placeholder="YouTube minutes">
+    <input id="whatsapp" placeholder="WhatsApp minutes">
+    <input id="study" placeholder="Study minutes">
+    <input id="night_usage" placeholder="Night usage minutes">
+    <input id="red_days" placeholder="Red days count">
+
+    <button onclick="predictRisk()">Predict Risk</button>
+    <h3 id="riskResult"></h3>
+
+    <!-- WHAT-IF SIMULATION -->
+    <hr>
+    
+    <h4>🔮 What-If Simulation</h4>
+    <p style="opacity:0.7; font-size:14px">
+      Simulate tomorrow’s usage to see how it affects your addiction risk.
+    </p>
+    
+    <input id="future_usage" placeholder="Planned usage tomorrow (minutes)">
+    <button onclick="simulateFuture()">Simulate Risk</button>
+    <p id="simulationResult" style="margin-top:8px"></p>
+
+    <p id="explainAI" style="opacity:0.8; font-size:14px"></p>
+
+
+  </div>
+
+
+</div>
+
+
+
+<script>
+
+let green = 0, red = 0;
+
+function showTab(tabId, btn) {
+  document.getElementById("dashboardTab").style.display = "none";
+  document.getElementById("analyticsTab").style.display = "none";
+  document.getElementById("riskTab").style.display = "none";
+
+  document.getElementById(tabId).style.display = "grid";
+
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+
+  if (tabId === "dashboardTab") loadDashboard();
+  if (tabId === "analyticsTab") loadInsights();
+}
+
+
+
+// Toggle light/dark mode
+function toggleMode() {
+  document.getElementById("body").classList.toggle("light");
+}
+
+// Send daily scroll data to backend
+function sendData() {
+  let usage = parseInt(document.getElementById("usage").value);
+  let task = document.getElementById("task").value;
+
+  if (!usage || usage <= 0) {
+  alert("Please enter valid usage time");
+  return;
+  }
+
+  fetch("http://127.0.0.1:5000/add", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({usage: usage, task: task})
+  })
+  .then(res => res.json())
+  .then(data => {
+    let msg = document.getElementById("alert");
+
+    if (data.alert === "GREEN") {
+      msg.innerHTML = "✅ Healthy Scrolling! Discipline is the bridge to success!";
+      msg.className = "green";
+    } else {
+      msg.innerHTML = "⚠ Over Scrolling! Focus on your task!";
+      msg.className = "red";
+      alert("⚠ AI ALERT: You are over scrolling! Focus on: " + task);
+    }
+
+    document.getElementById("taskReminder").innerText =
+      "Today's Task: " + task;
+
+    // 🔥 IMPORTANT
+    loadDashboard();   // <-- This refreshes streak, best streak, green & red days
+  });
+}
+
+
+// Load dashboard from backend
+
+function loadDashboard() {
+  fetch("http://127.0.0.1:5000/dashboard")
+    .then(res => res.json())
+    .then(data => {
+
+      // ---------- DASHBOARD METRICS ----------
+      document.getElementById("total").innerText = data.total_time;
+      document.getElementById("avg").innerText = data.average_time.toFixed(1);
+      document.getElementById("green").innerText = data.green_days;
+      document.getElementById("red").innerText = data.red_days;
+      document.getElementById("best").innerText = data.best;
+
+      let values = [];
+
+      data.records.forEach(r => {
+        values.push(r.usage_minutes);
+      });
+
+      // ---------- TODAY’S STATUS ----------
+      if (data.records.length > 0) {
+        let last = data.records[data.records.length - 1];
+        document.getElementById("todayStatus").innerHTML =
+          last.usage_minutes <= 60
+            ? "<span class='green'>✅ Healthy Today</span>"
+            : "<span class='red'>⚠ Overuse Today</span>";
+      } else {
+        document.getElementById("todayStatus").innerText = "--";
+      }
+
+
+      // ---------- AI WELLNESS SCORE ----------
+      
+      let score = 100;
+      
+      if (data.records.length > 0) {
+        let last = data.records[data.records.length - 1];
+        
+        // penalty based on usage
+        if (last.usage_minutes > 60) score -= (last.usage_minutes - 60);
+        
+        // penalty based on red days
+        score -= data.red_days * 5;
+      }
+      
+      // clamp score between 0–100
+      score = Math.max(0, Math.min(100, score));
+      
+      document.getElementById("wellnessScore").innerText = score + " / 100";
+      document.getElementById("wellnessNote").innerText = score >= 80 ? "🟢 Healthy Digital Balance"
+      
+      : score >= 50 ? "🟡 Moderate Usage – Stay Alert"
+      : "🔴 Risky Usage – Consider Reducing Screen Time";
+
+
+      // ---------- TOMORROW AI PREDICTION ----------
+      aiPrediction(values);
+    });
+}
+
+
+function loadInsights() {
+  fetch("http://127.0.0.1:5000/dashboard")
+    .then(res => res.json())
+    .then(data => {
+
+      // ---------- TABLE ----------
+      let table = document.getElementById("analyticsTable");
+      table.innerHTML =
+        "<tr><th>Date</th><th>Minutes</th><th>Status</th></tr>";
+
+      let labels = [];
+      let values = [];
+
+      data.records.forEach(r => {
+        let status = r.usage_minutes > 60 ? "RED" : "GREEN";
+        let badge =
+          status === "GREEN"
+            ? "<span class='green'>● GREEN</span>"
+            : "<span class='red'>● RED</span>";
+
+        table.innerHTML += `
+          <tr>
+            <td>${r.time.split(" ")[0]}</td>
+            <td>${r.usage_minutes}</td>
+            <td>${badge}</td>
+          </tr>`;
+
+        labels.push(r.time.split(" ")[0]);
+        values.push(r.usage_minutes);
+      });
+
+      // ---------- GRAPH ----------
+      drawInsightsChart(labels, values);
+    });
+}
+
+
+// Draw bar chart
+let insightsChartInstance = null;
+
+function drawInsightsChart(labels, values) {
+  const ctx = document
+    .getElementById("analyticsChart")
+    .getContext("2d");
+
+  if (insightsChartInstance) {
+    insightsChartInstance.destroy();
+  }
+
+  insightsChartInstance = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Daily Scroll Minutes",
+          data: values,
+          borderColor: "#2563eb",
+          backgroundColor: "rgba(37,99,235,0.2)",
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5
+        },
+        {
+          label: "Safe Limit (60 min)",
+          data: labels.map(() => 60),
+          borderColor: "#ef4444",
+          borderDash: [5, 5],
+          pointRadius: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: ctx => `Usage: ${ctx.raw} min`
+          }
+        }
+      },
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+}
+
+// Simple AI prediction (average of last 2 days)
+function aiPrediction(values) {
+  let predicted;
+
+  if (values.length === 0) {
+    predicted = 60; // default safe prediction
+  } 
+  else if (values.length === 1) {
+    predicted = Math.round(values[0] * 0.9);
+  } 
+  else {
+    let last = values[values.length - 1];
+    let prev = values[values.length - 2];
+    predicted = Math.round((last * 0.7) + (prev * 0.3));
+  }
+
+  document.getElementById("prediction").innerText = predicted + " min";
+
+  document.getElementById("predictionNote").innerText =
+    predicted > 60
+      ? "⚠ AI predicts risk of overuse. Try reducing screen time."
+      : "✅ AI predicts healthy usage tomorrow.";
+
+  let tip = predicted > 60
+  ? "Tip: Try keeping your phone away during work hours."
+  : "Tip: Maintain this routine for long-term focus.";
+  
+  document.getElementById("predictionNote").innerText += "\n" + tip;
+    
+}
+
+
+// Load dashboard on page load
+loadDashboard();
+
+// Addiction Risk Predictor
+async function predictRisk() {
+  const data = {
+    instagram: Number(document.getElementById("instagram").value),
+    youtube: Number(document.getElementById("youtube").value),
+    whatsapp: Number(document.getElementById("whatsapp").value),
+    study: Number(document.getElementById("study").value),
+    night_usage: Number(document.getElementById("night_usage").value),
+    red_days: Number(document.getElementById("red_days").value)
+  };
+
+  const response = await fetch("http://127.0.0.1:5000/predict_risk", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+
+  const result = await response.json();
+  document.getElementById("riskResult").innerText =
+    "Addiction Risk Level: " + result.risk;
+}
+
+let reasons = [];
+
+if (data.instagram + data.youtube + data.whatsapp > 120)
+  reasons.push("High social media usage");
+
+if (data.night_usage > 30)
+  reasons.push("Excessive night-time usage");
+
+if (data.red_days > 3)
+  reasons.push("Frequent overuse days");
+
+document.getElementById("explainAI").innerText =
+  "Why this prediction? " + (reasons.length ? reasons.join(", ") : "Balanced usage pattern");
+
+
+function simulateFuture() {
+  let planned = Number(document.getElementById("future_usage").value);
+
+  if (!planned || planned <= 0) {
+    alert("Please enter a valid planned usage time");
+    return;
+  }
+
+  let risk;
+
+  if (planned <= 60) risk = "LOW";
+  else if (planned <= 90) risk = "MEDIUM";
+  else risk = "HIGH";
+
+  document.getElementById("simulationResult").innerText =
+    `If you use ${planned} minutes tomorrow → Risk Level: ${risk}`;
+}
+
+
+// Simulated API data for auto-fill
+
+function loadSampleAPIData() {
+  const apiData = {
+    instagram: 120,
+    youtube: 90,
+    whatsapp: 60,
+    study: 45,
+    night_usage: 30,
+    red_days: 5
+  };
+
+  document.getElementById("instagram").value = apiData.instagram;
+  document.getElementById("youtube").value = apiData.youtube;
+  document.getElementById("whatsapp").value = apiData.whatsapp;
+  document.getElementById("study").value = apiData.study;
+  document.getElementById("night_usage").value = apiData.night_usage;
+  document.getElementById("red_days").value = apiData.red_days;
+
+  alert("Sample data loaded from simulated API!");
+}
+
+
+window.onload = () => {
+  showTab('dashboardTab', document.querySelector('.tab-btn'));
+};
+
+
+</script>
+
+</body>
+
+<footer style="text-align:center; padding:10px; opacity:0.6">
+  AI ScrollGuard · Mini Project · CSE
+</footer>
+
+
+</html>
