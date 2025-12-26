@@ -1,7 +1,5 @@
 # AI-SCROLLGUARD
 
-Here is a **clean, professional, and review-ready README.md** tailored **exactly for your AI ScrollGuard mini project**.
-You can **copy–paste this directly** into a file named `README.md` in your project root.
 
 ---
 
